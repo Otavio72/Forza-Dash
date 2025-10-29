@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Configurações básicas -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Corrida UDP</title>
+
+    <!-- CSS do projeto -->
+    <link href="/static/css/styles.css" rel="stylesheet" />
+    <link rel="icon" type="image/x-icon" href="/static/assets/favicon.ico" />
+
+    <!-- Font Awesome (ícones) -->
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Varela+Round" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet" />
+
+    <!-- Bootstrap -->
+    <link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/sign-in/">
+
+    <!-- Biblioteca Canvas Gauges (para os medidores analógicos) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-gauges@2.1.7/gauge.min.js"></script>
+</head>
+
+<body id="body-dashboard">
+
+<!-- Botão simples pra retornar ao histórico -->
+<a class="btn btn-outline-success" href="/historico">Histórico</a>
+
+<!-- Container principal dos gauges (indicadores visuais) -->
+<div class="gauges">
+    <div class="box1">
+        <!-- Indicador de combustível -->
+        <canvas id="fuelGauge"></canvas>
+        <div class="box displayNone">Fuel: <span id="fuel" class="value">0</span></div>
+
+        <!-- Indicador de RPM -->
+        <canvas id="rpmGauge"></canvas>
+        <div class="box displayNone">RPM: <span id="rpmValue" class="value">0</span></div>
+    </div>
+    
+    <div class="box2">
+        <!-- Indicador de velocidade -->
+        <canvas id="speedGauge"></canvas>
+        <div class="box displayNone">Velocidade: <span id="speedValue" class="value">0</span> km/h</div>
+
+        <!-- Indicador de pressão do turbo (boost) -->
+        <canvas id="boostGauge"></canvas>
+        <div class="box displayNone">Boost: <span id="boostValue" class="value">0</span> bar</div>
+    </div>
+</div>
+
+<!-- Outros dados da telemetria -->
+<div class="outros-dados">
+    <div class="info">
+        <div class="box">Marcha: <span id="gear" class="value">0</span></div>
+        <div class="box">Steer: <span id="steer" class="value">0</span>°</div>
+        <div class="box">Best Lap: <span id="bestlap" class="value">0</span></div>
+    </div>
+    
+    <!-- Barras de aceleração e freio -->
+    <div class="bar-box">
+        <div class="bar-label">Acelerador: <span id="accelValue">0</span>%</div>
+        <div class="bar-container"><div id="accelBar" class="bar"></div></div>
+
+        <div class="bar-label">Freio: <span id="brakeValue">0</span>%</div>
+        <div class="bar-container"><div id="brakeBar" class="bar"></div></div>
+
+        <hr>
+        <div class="box">Corrida Status: <span id="corridastatus" class="value">N/A</span></div>
+    </div>
+
+    <div class="info">
+        <div class="box">LapNumber: <span id="lapNumber" class="value">0</span></div>
+        <div class="box">RacePosition: <span id="racePosition" class="value">0</span></div>
+        <div class="box">Carro: <span id="carro" class="value">N/A</span></div>
+    </div>
+</div>
+
+<!-- SCRIPT PRINCIPAL -->
+<script>
+    /* === CONFIGURAÇÃO DOS GAUGES === */
+    
+    // Gauge de RPM
+    const rpmGauge = new RadialGauge({
+        renderTo: 'rpmGauge',
+        width: 300, height: 300,
+        minValue: 0, maxValue: 9000,
+        majorTicks: [0,1000,2000,3000,4000,5000,6000,7000,8000,9000],
+        minorTicks: 5,
+        value: 0,
+        units: "RPM",
+        colorPlate: "#111",
+        colorMajorTicks: "#fff",
+        colorMinorTicks: "#888",
+        colorNumbers: "#0f0",
+        colorNeedle: "rgba(255,0,0,1)",
+        colorNeedleEnd: "rgba(255,0,0,1)",
+        borders: false,
+        needleType: "arrow",
+        needleWidth: 2,
+        animationDuration: 0,
+        animationRule: "linear",
+        highlights: [
+            { from: 0, to: 4000, color: 'rgba(0,255,0,1)' },
+            { from: 4000, to: 7000, color: 'rgba(255,255,0,1)' },
+            { from: 7000, to: 9000, color: 'rgba(255,0,0,1)' }
+        ]
+    }).draw();
+
+    // Gauge de Velocidade
+    const speedGauge = new RadialGauge({
+        renderTo: 'speedGauge',
+        width: 300, height: 300,
+        minValue: 0, maxValue: 400,
+        majorTicks: [0,50,100,150,200,250,300,350,400],
+        minorTicks: 5,
+        value: 0,
+        units: "km/h",
+        colorPlate: "#111",
+        colorMajorTicks: "#fff",
+        colorMinorTicks: "#888",
+        colorNumbers: "#0f0",
+        colorNeedle: "rgba(0,255,255,1)",
+        colorNeedleEnd: "rgba(0,255,255,1)",
+        borders: false,
+        needleType: "arrow",
+        needleWidth: 2,
+        animationDuration: 0,
+        animationRule: "linear"
+    }).draw();
+
+    // Gauge de Boost (pressão do turbo)
+    const boostGauge = new RadialGauge({
+        renderTo: 'boostGauge',
+        width: 200, height: 200,
+        minValue: -1, maxValue: 2,
+        majorTicks: [-1,0,1,1.5,2],
+        minorTicks: 5,
+        value: 0,
+        units: "bar",
+        colorPlate: "#111",
+        colorMajorTicks: "#fff",
+        colorMinorTicks: "#888",
+        colorNumbers: "#0f0",
+        colorNeedle: "rgba(255,0,255,1)",
+        colorNeedleEnd: "rgba(255,0,255,1)",
+        borders: false,
+        needleType: "arrow",
+        needleWidth: 2,
+        animationDuration: 0,
+        animationRule: "linear"
+    }).draw();
+
+    // Gauge de Combustível
+    const fuelGauge = new RadialGauge({
+        renderTo: 'fuelGauge',
+        width: 200, height: 200,
+        minValue: 0, maxValue: 100,
+        majorTicks: [0, 25, 50, 75, 100],
+        minorTicks: 5,
+        value: 0,
+        units: "Fuel %",
+        colorPlate: "#111",
+        colorMajorTicks: "#fff",
+        colorMinorTicks: "#888",
+        colorNumbers: "#0f0",
+        colorNeedle: "rgba(255,165,0,0.9)",
+        colorNeedleEnd: "rgba(255,165,0,0.9)",
+        borders: false,
+        needleType: "arrow",
+        needleWidth: 2,
+        animationDuration: 0,
+        animationRule: "linear",
+        highlights: [
+            { from: 0, to: 20, color: 'rgba(255,0,0,1)' },     
+            { from: 20, to: 50, color: 'rgba(255,165,1)' },  
+            { from: 50, to: 100, color: 'rgba(0,255,0,1)' }  
+        ]
+    }).draw();
+
+    /* === CONEXÃO WEBSOCKET === */
+    // Conecta ao backend FastAPI que envia os dados da telemetria em tempo real
+    const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+
+    ws.onopen = () => console.log("✅ WebSocket conectado!");
+    ws.onclose = () => console.log("❌ WebSocket fechado!");
+
+    // Recebe e trata os dados enviados pelo servidor
+    ws.onmessage = function(event){
+        const data = JSON.parse(event.data);
+
+        // Atualiza valores dos gauges
+        rpmGauge.value = Math.min(Math.max(data.rpm, 0), 9000);
+        speedGauge.value = data.velocidade;
+        boostGauge.value = data.boost;
+        fuelGauge.value = data.fuel;
+
+        // Atualiza dados numéricos na tela
+        document.getElementById("rpmValue").innerText = data.rpm;
+        document.getElementById("speedValue").innerText = data.velocidade.toFixed(1);
+        document.getElementById("boostValue").innerText = data.boost.toFixed(2);
+        document.getElementById("gear").innerText = data.gear;
+        document.getElementById("steer").innerText = data.steer.toFixed(1);
+        document.getElementById("bestlap").innerText = data.bestlap.toFixed(1);
+        document.getElementById("lapNumber").innerText = data.lapNumber.toFixed(1);
+        document.getElementById("racePosition").innerText = data.racePosition.toFixed(1);
+        document.getElementById("fuel").innerText = data.fuel.toFixed(1);
+        document.getElementById("carro").innerText = data.carro;
+        document.getElementById("corridastatus").innerText = data.corridastatus;
+
+        // Atualiza as barras de aceleração e freio
+        document.getElementById("accelValue").innerText = data.acelerador.toFixed(0);
+        document.getElementById("accelBar").style.width = data.acelerador + "%";
+        document.getElementById("brakeValue").innerText = data.freio.toFixed(0);
+        document.getElementById("brakeBar").style.width = data.freio + "%";
+    };
+</script>
+
+</body>
+</html>
