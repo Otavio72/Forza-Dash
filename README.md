@@ -27,16 +27,21 @@ O objetivo do projeto é demonstrar integração entre jogo e backend, processam
 ## 💻 Layout da aplicação
 
 ### Página inicial
-![Página Inicial](assets/acs1.png)
+![Página Inicial](assets/1.png)
 
-### Página de Status
-![Página de Status](assets/acs2.png)
+![Página Inicial](assets/2.png)
 
-### Menu de Sessões
-![Menu de Sessões](assets/acs3.png)
+### Login
+![Página Inicial](assets/3.png)
+
+### Página de Registro
+![Página de Registro](assets/4.png)
 
 ### Página de Análise
-![Página de Análise](assets/acs4.png)
+![Página de Análise](assets/5.png)
+
+### Página de Análise
+![Página de Análise](assets/6.png)
 
 ---
 
@@ -117,5 +122,6 @@ docker run -d -p 8000:8000 fm7dash
 # Autor
 Otávio Ribeiro
 [🔗LinkedIn](https://www.linkedin.com/in/otavio-ribeiro-57a359197)
+
 
 
