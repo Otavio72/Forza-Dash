@@ -37,21 +37,16 @@ O objetivo do projeto é demonstrar integração entre jogo e backend, processam
 ### Página de Registro
 ![Página de Registro](assets/4.png)
 
-### Página de Análise
+### Página de Historico
 ![Página de Análise](assets/5.png)
 
-### Página de Análise
+### Página de Perfil
 ![Página de Análise](assets/6.png)
 
 ---
 
-## 🎞️ Demonstração
-
-### Datalogger em ação
-![Datalogger](assets/gif3.gif)
-
-### Dentro do jogo
-🎥 [Assista à demonstração no YouTube](https://www.youtube.com/watch?v=mdHSS1vnZvM)
+### dashboard em ação
+![Datalogger](assets/gif1.gif)
 
 ---
 
@@ -122,6 +117,7 @@ docker run -d -p 8000:8000 fm7dash
 # Autor
 Otávio Ribeiro
 [🔗LinkedIn](https://www.linkedin.com/in/otavio-ribeiro-57a359197)
+
 
 
 
