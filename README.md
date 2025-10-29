@@ -1,4 +1,4 @@
-# 🏎️📊 FM7Dash
+# 🏎️📊 Forza Dash
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/Otavio72/Forza-Dash/blob/main/LICENSE)
 
@@ -117,6 +117,7 @@ docker run -d -p 8000:8000 fm7dash
 # Autor
 Otávio Ribeiro
 [🔗LinkedIn](https://www.linkedin.com/in/otavio-ribeiro-57a359197)
+
 
 
 
