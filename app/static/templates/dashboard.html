@@ -189,33 +189,87 @@
     ws.onclose = () => console.log("❌ WebSocket fechado!");
 
     // Recebe e trata os dados enviados pelo servidor
-    ws.onmessage = function(event){
-        const data = JSON.parse(event.data);
+    // Coalesce messages and update once per animation frame to avoid flicker
+    let latestTelemetry = null;
+    let rafScheduled = false;
 
-        // Atualiza valores dos gauges
-        rpmGauge.value = Math.min(Math.max(data.rpm, 0), 9000);
-        speedGauge.value = data.velocidade;
-        boostGauge.value = data.boost;
-        fuelGauge.value = data.fuel;
+    function applyTelemetry(data) {
+        if (!data) return;
 
-        // Atualiza dados numéricos na tela
-        document.getElementById("rpmValue").innerText = data.rpm;
-        document.getElementById("speedValue").innerText = data.velocidade.toFixed(1);
-        document.getElementById("boostValue").innerText = data.boost.toFixed(2);
+        // Valores processados (coerção e limites)
+        const rpmVal = Math.min(Math.max(Number(data.rpm) || 0, 0), 9000);
+        const speedVal = Number(data.velocidade) || 0;
+        const boostVal = Number(data.boost) || 0;
+        const fuelVal = Number(data.fuel) || 0;
+
+        // Pequeno limiar (deadzone) para evitar atualizações por ruído
+        const rpmThreshold = 1;        // RPM: atualiza se mudar mais que 1
+        const speedThreshold = 0.1;    // km/h
+        const boostThreshold = 0.01;   // bar
+        const fuelThreshold = 0.1;     // %
+
+        // Atualiza valores dos gauges apenas se mudarem mais que o limiar
+        if (Math.abs(Number(rpmGauge.value) - rpmVal) > rpmThreshold) {
+            rpmGauge.value = rpmVal;
+        }
+        if (Math.abs(Number(speedGauge.value) - speedVal) > speedThreshold) {
+            speedGauge.value = speedVal;
+        }
+        if (Math.abs(Number(boostGauge.value) - boostVal) > boostThreshold) {
+            boostGauge.value = boostVal;
+        }
+        if (Math.abs(Number(fuelGauge.value) - fuelVal) > fuelThreshold) {
+            fuelGauge.value = fuelVal;
+        }
+
+        // Atualiza displays numéricos com formatação
+        document.getElementById("rpmValue").innerText = Math.round(rpmVal);
+        document.getElementById("speedValue").innerText = speedVal.toFixed(1);
+        document.getElementById("boostValue").innerText = boostVal.toFixed(2);
         document.getElementById("gear").innerText = data.gear;
-        document.getElementById("steer").innerText = data.steer.toFixed(1);
-        document.getElementById("bestlap").innerText = data.bestlap.toFixed(1);
-        document.getElementById("lapNumber").innerText = data.lapNumber.toFixed(1);
-        document.getElementById("racePosition").innerText = data.racePosition.toFixed(1);
-        document.getElementById("fuel").innerText = data.fuel.toFixed(1);
+        document.getElementById("steer").innerText = Number(data.steer || 0).toFixed(1);
+        document.getElementById("bestlap").innerText = Number(data.bestlap || 0).toFixed(1);
+        document.getElementById("lapNumber").innerText = Number(data.lapNumber || 0).toFixed(1);
+        document.getElementById("racePosition").innerText = Number(data.racePosition || 0).toFixed(1);
+        document.getElementById("fuel").innerText = fuelVal.toFixed(1);
         document.getElementById("carro").innerText = data.carro;
         document.getElementById("corridastatus").innerText = data.corridastatus;
 
-        // Atualiza as barras de aceleração e freio
-        document.getElementById("accelValue").innerText = data.acelerador.toFixed(0);
-        document.getElementById("accelBar").style.width = data.acelerador + "%";
-        document.getElementById("brakeValue").innerText = data.freio.toFixed(0);
-        document.getElementById("brakeBar").style.width = data.freio + "%";
+        // Atualiza as barras de aceleração e freio (evita repaints desnecessários)
+        const accelPct = Math.round(Number(data.acelerador || 0));
+        const brakePct = Math.round(Number(data.freio || 0));
+        const accelBar = document.getElementById("accelBar");
+        const brakeBar = document.getElementById("brakeBar");
+
+        const curAccel = parseInt(accelBar.style.width || "0") || 0;
+        const curBrake = parseInt(brakeBar.style.width || "0") || 0;
+
+        if (Math.abs(curAccel - accelPct) > 1) {
+            accelBar.style.width = accelPct + "%";
+            document.getElementById("accelValue").innerText = accelPct;
+        }
+        if (Math.abs(curBrake - brakePct) > 1) {
+            brakeBar.style.width = brakePct + "%";
+            document.getElementById("brakeValue").innerText = brakePct;
+        }
+    }
+
+    ws.onmessage = function(event){
+        try {
+            latestTelemetry = JSON.parse(event.data);
+        } catch(e) {
+            console.warn("WS parse error", e);
+            return;
+        }
+
+        if (!rafScheduled) {
+            rafScheduled = true;
+            requestAnimationFrame(function(){
+                applyTelemetry(latestTelemetry);
+                latestTelemetry = null;
+                rafScheduled = false;
+            });
+        }
     };
 </script>
 
